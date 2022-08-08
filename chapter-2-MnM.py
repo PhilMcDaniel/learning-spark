@@ -1,3 +1,4 @@
+from os import truncate
 import sys
 
 from pyspark.sql import SparkSession
@@ -37,11 +38,23 @@ count_mnm_df.show(n=60,truncate = False)
 print("Total rows = %d" % (count_mnm_df.count()))
 
 
-#single state filtering transform
+#single state filtering transform using WHERE tsf
+ca_count_mnm_df = (mnm_df
+.select("State","Color","Count")
+.where(mnm_df.State =="CA")
+.groupBy("State","Color")
+.sum("Count")
+.orderBy("sum(Count)",ascending = False)
+)
 
+ca_count_mnm_df.show(n=15, truncate = False)
 
-#single state action 
 
 #figure out how the localhost url monitor works
 
+#execute from terminal
+#py chapter-2-MnM.py ./data/mnm_dataset.csv
+
+#execute from spark submit. Likely needs a bit of filepath edits to work
+#$SPARK_HOME/bin/spark-submit chapter-2-MnM.py ./data/mnm_dataset.csv
 spark.stop()
