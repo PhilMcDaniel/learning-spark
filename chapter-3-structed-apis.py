@@ -167,3 +167,57 @@ few_fire_df.show(10,truncate= False)
     .distinct()
     .show()
 )
+
+#renaming, adding, dropping columns
+new_fire_df = fire_df.withColumnRenamed("Delay","ResponseDelayedinMins")
+(
+    new_fire_df
+    .select("ResponseDelayedInMins")
+    .where(col("ResponseDelayedInMins")>5)
+    .show(5,False)
+)
+
+#dateformatting & create/drop cols
+fire_ts_df = (
+new_fire_df
+.withColumn("IncidentDate",to_timestamp(col("CallDate"),"MM/dd/yyyy"))
+.drop("CallDate")
+.withColumn("OnWatchDate",to_timestamp(col("WatchDate"),"MM/dd/yyyy"))
+.drop("WatchDate")
+.withColumn("AvailabilityDtTS",to_timestamp(col("AvailableDtTm"),"MM/dd/yyyy hh:mm:ss a"))
+.drop("AvailableDtTm")
+.select("IncidentDate","OnWatchDate","AvailabilityDtTS")
+
+)
+fire_ts_df.show(10,False)
+
+#use date functions now that we have date datatypes
+(fire_ts_df
+.select(year("IncidentDate"))
+.distinct()
+.orderBy(year("IncidentDate"))
+.show()
+
+)
+
+#aggregations
+
+(
+    fire_df
+    .select("CallType")
+    .where(col("CallType").isNotNull())
+    .groupBy("CallType")
+    .count()
+    .orderBy("count",ascending=False)
+    .show(10,False)
+)
+
+#other operations
+
+(
+    new_fire_df
+    .select(sum("NumAlarms"),avg("ResponseDelayedInMins"),min("ResponseDelayedInMins"),max("ResponseDelayedInMins"))
+    .show()
+)
+
+#dataset API
