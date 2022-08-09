@@ -1,8 +1,12 @@
+from math import exp
+from operator import concat
 import pyspark
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession,Row
 from pyspark.sql.functions import avg
 from pyspark.sql.types import *
+from pyspark.sql.functions import *
 
+#https://github.com/databricks/learningsparkv2
 
 spark = SparkSession.builder.appName('chapter-3-stuctured-apis').getOrCreate()
 sparkContext=spark.sparkContext
@@ -60,3 +64,106 @@ blogs_df=spark.createDataFrame(data,schema)
 blogs_df.show()
 #show schema
 print(blogs_df.printSchema())
+
+
+#Columns & expressions
+blogs_df.columns
+blogs_df.dtypes
+blogs_df.dtypes[0]
+
+#use expression to compute a value
+blogs_df.selectExpr(("Hits * 2")).show()
+#use col to compute a value
+blogs_df.select(col("Hits")*2).show()
+
+#create new column with conditional expression
+blogs_df.withColumn("Big Hitters",(expr("Hits > 10000"))).show()
+
+#create new concatenated column
+blogs_df.withColumn("AuthorsId",concat(expr("First"),expr("Last"),expr("ID"))).select("*").show()
+
+#sort by column values
+blogs_df.sort(col("ID").desc()).show()
+
+
+#Rows
+blog_row = Row(6,"Reynold","Xin","tinyurl.6",255568,"3/2/2015",["twitter","LinkedIn"])
+blog_row[1]
+
+#can use rows to quickly create dataframe
+rows = [Row("Matei Zakaria","CA"),Row("Reynold Xin","CA")]
+authors_df = spark.createDataFrame(rows,["Authors","State"])
+authors_df.show()
+
+
+#dataframe reader & writer
+fire_schema = StructType([
+    StructField('CallNumber',IntegerType(),True),
+    StructField('UnitID',StringType(),True),
+    StructField('IncidentNumber',IntegerType(),True),
+    StructField('CallType',StringType(),True),
+    StructField('CallDate',StringType(),True),
+    StructField('WatchDate',StringType(),True),
+    StructField('CallFinalDisposition',StringType(),True),
+    StructField('AvailableDtTm',StringType(),True),
+    StructField('Address',StringType(),True),
+    StructField('City',StringType(),True),
+    StructField('Zipcode',IntegerType(),True),
+    StructField('Battalion',StringType(),True),
+    StructField('StationArea',StringType(),True),
+    StructField('Box',StringType(),True),
+    StructField('OriginalPriority',StringType(),True),
+    StructField('Priority',StringType(),True),
+    StructField('FinalPriority',IntegerType(),True),
+    StructField('ALSUnit',BooleanType(),True),
+    StructField('CallTypeGroup',StringType(),True),
+    StructField('NumAlarms',IntegerType(),True),
+    StructField('UnitType',StringType(),True),
+    StructField('UnitSequenceInCallDispatch',IntegerType(),True),
+    StructField('FirePreventionDistrict',StringType(),True),
+    StructField('SupervisorDistrict',StringType(),True),
+    StructField('Neighborhood',StringType(),True),
+    StructField('Location',StringType(),True),
+    StructField('RowID',StringType(),True),
+    StructField('Delay',FloatType(),True)
+    ]
+)
+#DataFrameReader interfact to read csv file
+
+sf_fire_file = "data/sf-fire-calls.csv"
+fire_df = spark.read.csv(sf_fire_file,header=True,schema = fire_schema)
+fire_df.show(10)
+
+#save dataframe to .parquet file using DataFrameWriter
+#winutils.exe & hadoop.dll were needed for this to work
+parquet_path = 'data/sf-fire-calls.parquet'
+fire_df.write.format("parquet").save(parquet_path)
+
+#write to table
+parquet_table = 'newparquettable'
+fire_df.write.format("parquet").saveAsTable(parquet_table)
+
+
+#dataframe transformations & actions
+few_fire_df = (
+    fire_df
+    .select("IncidentNumber","AvailableDtTm","CallType")
+    .where(col("CallType") != "Medical Incident")
+)
+few_fire_df.show(10,truncate= False)
+
+#distinct counts
+(fire_df
+    .select("CallType")
+    .where(col("CallType").isNotNull())
+    .agg(countDistinct("CallType").alias("DistinctCallTypes"))
+    .show()
+)
+
+#distinct list
+(fire_df
+    .select("CallType")
+    .where(col("CallType").isNotNull())
+    .distinct()
+    .show()
+)
