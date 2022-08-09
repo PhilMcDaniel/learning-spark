@@ -221,3 +221,10 @@ fire_ts_df.show(10,False)
 )
 
 #dataset API
+#datasets only make sense in Scala & Java due to bound types and Python & R using inferred
+row = (350, True, "Learning Spark E2E",None)
+row[0]
+row[1]
+row[2]
+
+#queryplans
