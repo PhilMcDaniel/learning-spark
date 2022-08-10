@@ -153,3 +153,4 @@ cython_debug/
 
 /spark-warehouse
 /data/*.parquet
+/metastore_db
