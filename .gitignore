@@ -154,4 +154,4 @@ cython_debug/
 /spark-warehouse
 /data/*.parquet
 /metastore_db
-data/departuredelays.csv
+data/*
