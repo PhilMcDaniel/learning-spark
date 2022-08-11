@@ -1,5 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
+from pyspark.ml import image
 
 #https://github.com/databricks/learningsparkv2
 
@@ -144,3 +145,126 @@ spark.catalog.listColumns(tableName="managed_us_delay_flights_tbl")
 #UNCACHE TABLE <table_name>
 
 #reading tables into dataframes
+df = spark.sql("SELECT * FROM learn_spark_db.managed_us_delay_flights_tbl")
+
+#dataframe reader
+file_path = 'data/2010-flight-summary.parquet'
+df = spark.read.format("parquet").load(file_path)
+df.show(10)
+
+#dataframe writer
+df.write.saveAsTable("learn_spark_db.2010_flight_summary_tbl")
+
+#parquet example
+#open source, default format, widely supported, columnar, compressed for i/o optimization
+#stored in directory stucture (datafiles, metadata, compressed files, status files)
+
+#read parquet into dataframe
+file_path = 'data/2010-flight-summary.parquet'
+df = spark.read.format("parquet").load(file_path)
+df.show(10)
+
+#write df into temp view
+spark.sql("""CREATE OR REPLACE TEMPORARY VIEW us_flight_delay_summary_tbl USING parquet OPTIONS(path = "data/2010-flight-summary.parquet")""")
+spark.sql("""SELECT * FROM us_flight_delay_summary_tbl""").show()
+
+#write dataframe to parquet
+(
+    df
+    .write
+    .format("parquet")
+    .mode("overwrite")
+    .option("compression","snappy")
+    .save("data/tmp/df_parquet")
+)
+
+#write dataframe to spark sql tbl
+(
+    df
+    .write
+    .mode("overwrite")
+    .saveAsTable("learn_spark_db.df_parquet")
+)
+
+#JSON
+
+#reading JSON file into dataframe
+df = spark.read.format("json").load("data/2010-summary.json")
+df.show(10)
+
+#reading JSON file into spark SQL table
+spark.sql("""CREATE OR REPLACE TEMPORARY VIEW us_flight_delay_2010_json_tbl USING JSON OPTIONS(path = "data/2010-summary.json")""")
+spark.sql("SELECT * FROM us_flight_delay_2010_json_tbl").show(15,False)
+
+#read table to df
+df = spark.sql("SELECT * FROM us_flight_delay_2010_json_tbl")
+#write df to json file
+(
+    df
+    .write
+    .format("json")
+    .mode("overwrite")
+    .option("compression","snappy")
+    .save("data/df_json")
+)
+
+
+#csv
+
+#read csv into dataframe
+schema = 'DEST_COUNTRY_NAME STRING, ORIGIN_COUNTRY_NAME STRING, count INT'
+df = spark.read.format("csv").schema(schema).option("header","true").option("mode","failfast").option("nullValue","").load("data/2010-summary.csv")
+df.show(10)
+
+#read csv into spark SQL table
+spark.sql("""CREATE OR REPLACE TEMPORARY VIEW us_flight_delay_2010_csv_tbl USING CSV OPTIONS(path = "data/2010-summary.csv",header="true",inferSchema = "true")""")
+spark.sql("SELECT * FROM us_flight_delay_2010_csv_tbl").show(10)
+
+#write dataframe to csv file
+df.write.format("csv").mode("overwrite").save("data/df_csv")
+
+
+#avro
+#same processes as before but errors on windows machine that I don't want to track down
+df = spark.read.format("avro").load("data/2010-flight-summary.avro")
+
+
+#orc
+#read ORC file into dataframe
+df = spark.read.format("orc").load("data/2010-summary-orc.snappy.orc")
+df.show(10)
+
+#read into spark SQL table
+spark.sql("""CREATE OR REPLACE TEMPORARY VIEW us_flight_delay_2010_orc_tbl USING CSV OPTIONS(path = "data/2010-summary-orc.snappy.orc")""")
+spark.sql("SELECT * FROM us_flight_delay_2010_orc_tbl").show(10)
+
+#write df to orc files
+(
+    df
+    .write
+    .format("orc")
+    .mode("overwrite")
+    .option("compression","snappy")
+    .save("data/df_orc")
+)
+
+
+#images
+
+#read image into dataframe
+image_dir = 'data/images/'
+images_df = spark.read.format("image").load(image_dir)
+images_df.printSchema()
+
+#this blows up the terminal with data
+images_df.show(10,False)
+#do this instead
+images_df.select("image.height","image.width","image.nChannels","image.mode").show(5,False)
+
+
+#binary files
+path = 'data/images/'
+images_df = spark.read.format("binaryFile").option("pathGlobFilter","*.jpg").load(path)
+images_df.show(5)
+
+#cannot write back to original filetype
