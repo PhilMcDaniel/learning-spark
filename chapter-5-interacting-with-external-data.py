@@ -133,3 +133,30 @@ SELECT origin, destination,TotalDelays,rank
  WHERE rank <=3
 """).show()
 
+#modifications
+
+#adding new columns
+foo2 = foo.withColumn("status",expr("CASE WHEN delay <=10 THEN 'on-time' else 'delayed' END"))
+foo2.show()
+
+#dropping columns
+foo3 = foo2.drop("delay")
+foo3.show()
+
+#renaming columns
+foo4 = foo3.withColumnRenamed("status","flight_status")
+foo4.show()
+
+#pivoting
+
+spark.sql("""SELECT destination,CAST(substring(date,0,2) as int) as month,delay from departuredelays where origin = 'SEA'""").show()
+spark.sql("""
+SELECT * FROM (
+    SELECT destination,CAST(substring(date,0,2) as int) as month,delay from departuredelays where origin = 'SEA')
+    
+    PIVOT(
+        CAST(AVG(Delay) as decimal(4,2)) as AVGDElay, MAX(delay) as MAXDelay for month in (1 JAN, 2 FEB)
+    )
+
+""").show()
+
