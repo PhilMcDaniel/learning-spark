@@ -1,8 +1,10 @@
+from statistics import mode
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.conf import *
 from pyspark.storagelevel import *
+
 
 #https://github.com/databricks/learningsparkv2
 
@@ -100,3 +102,8 @@ spark.sql("SELECT COUNT(*) from dfTable").show()
 
 
 #family of spark joins
+df.explain(mode="simple") #use this to see the join operation
+#broadcast hash join
+
+
+#shuffle sort merge join
