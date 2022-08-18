@@ -12,6 +12,7 @@ if __name__ == "__main__":
 #build sparksession
 spark = (SparkSession
 .builder
+.master("local[*]")
 .appName("PythonMnMCount")
 .getOrCreate())
 

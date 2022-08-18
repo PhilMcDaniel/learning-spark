@@ -8,6 +8,7 @@ import pandas as pd
 spark = (
     SparkSession
     .builder
+    .master("local[*]")
     .enableHiveSupport()
     .appName("SparkSQLExampleApp")
     .getOrCreate()

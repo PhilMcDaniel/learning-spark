@@ -8,6 +8,7 @@ from pyspark.ml import image
 spark = (
     SparkSession
     .builder
+    .master("local[*]")
     .enableHiveSupport()
     .appName("SparkSQLExampleApp")
     .getOrCreate()

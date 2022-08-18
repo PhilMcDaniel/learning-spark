@@ -8,7 +8,7 @@ from pyspark.sql.functions import *
 
 #https://github.com/databricks/learningsparkv2
 
-spark = SparkSession.builder.appName('chapter-3-stuctured-apis').getOrCreate()
+spark = SparkSession.builder.master("local[*]").appName('chapter-3-stuctured-apis').getOrCreate()
 sparkContext=spark.sparkContext
 
 #create RDD the hard way using low level apis
