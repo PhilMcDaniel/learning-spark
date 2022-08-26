@@ -4,12 +4,15 @@ from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.conf import *
 from pyspark.storagelevel import *
+from delta import *
 
 #https://github.com/databricks/learningsparkv2
 spark = (
     SparkSession
     .builder
     .master("local[*]")
+    .config("spark.sql.extensions","io.delta.sql.DeltaSparkSessionExtension") #needed for delta
+    .config("spark.sql.catalog.spark_catalog","org.apache.spark.sql.delta.catalog.DeltaCatalog") #needed for delta
     .enableHiveSupport()
     .appName("chapter-9")
     .getOrCreate()
@@ -67,8 +70,8 @@ spark = (
 #configuring DeltaLake
 #pyspark --packages io.delta:delta-core_2.12:0.7.0
 
-source_path = ''
-delta_path = ''
+source_path = 'data/loan-risks.snappy.parquet'
+delta_path = 'data/tmp/loans_delta'
 (
     spark.read.format("parquet").load(source_path).write.format("delta").save(delta_path)
 )
